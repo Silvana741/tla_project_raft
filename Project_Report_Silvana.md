@@ -41,3 +41,10 @@ Consensus algorithms (i.e. Paxos, Raft etc.)
 HovercRaft:
     - introduces IP multicast to solve IO bottleneck - instead of targeting a specific server, clients inside the datacenter send their requests to a multicast group that includes the leader and the followers 
     - IP multicast does not guarantee ordering or delivery, that's why ordering needs to be handled by the leader 
+    - bounded queues used to deal with node failures 
+    - steps:
+        (1) the leader inserts entries at log_idx, the head of the log without determining yet which node will send the reply;
+        (2) the leader selects the node in charge of replying to the client and updates the announced_idx accordingly; 
+        (3) the commit_idx represents the point upon which consensus has been reached; 
+        (4) the applied_idx represents the point upon which operations have been applied to the state machine. Each follower also has its own set of applied_idx, commit_idx, and log_idx indices on its local log. Announced_idx is relevant only for the leader. Followers communicate their applied_idx to the leader as part of the append_entries reply.
+    

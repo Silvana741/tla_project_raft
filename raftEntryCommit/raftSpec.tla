@@ -28,31 +28,45 @@ Receive(m) ==
              \/ HandleAppendEntriesResponse(i, j, m)
 
 \* Defines how the variables may transition.
-Next == 
-           \/ \E i \in Server : Timeout(i)
+
+MySwitchNext ==
+    \/ \E i \in RaftServers(switchIndex), v \in Value :
+      state[i] = Leader /\ SwitchClientRequest(switchIndex, i, v)
+    \/ \E i \in RaftServers(switchIndex), v \in DOMAIN switchBuffer :
+      SwitchClientRequestReplicate(switchIndex, i, v)
+   \/ \E i \in Server, v \in DOMAIN switchBuffer :
+      state[i] = Leader /\ LeaderAddLog(i, v)
+   \/ \E i \in RaftServers(switchIndex) : AdvanceCommitIndex(i)
+   \/ \E i,j \in RaftServers(switchIndex) : i /= j /\ AppendEntries(i, j)
+   \/ \E m \in {msg \in ValidMessage(messages) : msg.mtype \in
+    {AppendEntriesRequest, AppendEntriesResponse}} : Receive(m)
+
+MySpec == MyInit /\ [][MySwitchNext]_vars
+\*Next == 
+\*           \/ \E i \in Server : Timeout(i)
 \*           \/ \E i \in Server : Restart(i)
-           \/ \E i,j \in Server : i /= j /\ RequestVote(i, j)
-           \/ \E i \in Server : BecomeLeader(i)
-           \/ \E i \in Server, v \in Value : state[i] = Leader /\ ClientRequest(i, v)
-           \/ \E i \in Server : AdvanceCommitIndex(i)
-           \/ \E i,j \in Server : i /= j /\ AppendEntries(i, j)
-           \/ \E m \in {msg \in ValidMessage(messages) : \* to visualize possible messages
-                    msg.mtype \in {RequestVoteRequest, RequestVoteResponse, AppendEntriesRequest, AppendEntriesResponse}} : Receive(m)
+\*           \/ \E i,j \in Server : i /= j /\ RequestVote(i, j)
+\*           \/ \E i \in Server : BecomeLeader(i)
+\*           \/ \E i \in Server, v \in Value : state[i] = Leader /\ ClientRequest(i, v)
+\*           \/ \E i \in Server : AdvanceCommitIndex(i)
+\*           \/ \E i,j \in Server : i /= j /\ AppendEntries(i, j)
+\*           \/ \E m \in {msg \in ValidMessage(messages) : \* to visualize possible messages
+\*                    msg.mtype \in {RequestVoteRequest, RequestVoteResponse, AppendEntriesRequest, AppendEntriesResponse}} : Receive(m)
 \*           \/ \E m \in {msg \in ValidMessage(messages) : 
 \*                    msg.mtype \in {AppendEntriesRequest}} : DuplicateMessage(m)
 \*           \/ \E m \in {msg \in ValidMessage(messages) : 
 \*                    msg.mtype \in {RequestVoteRequest}} : DropMessage(m)
 
-MyNext == 
+\*MyNext == 
 \*           \/ \E i \in Server : Timeout(i)
 \*           \/ \E i \in Server : Restart(i)
 \*           \/ \E i,j \in Server : i /= j /\ RequestVote(i, j)
 \*           \/ \E i \in Server : BecomeLeader(i)
-           \/ \E i \in Server, v \in Value : state[i] = Leader /\ ClientRequest(i, v)
-           \/ \E i \in Server : AdvanceCommitIndex(i)
-           \/ \E i,j \in Server : i /= j /\ AppendEntries(i, j)
-           \/ \E m \in {msg \in ValidMessage(messages) : \* to visualize possible messages
-                    msg.mtype \in {AppendEntriesRequest, AppendEntriesResponse}} : Receive(m)
+\*           \/ \E i \in Server, v \in Value : state[i] = Leader /\ ClientRequest(i, v)
+\*           \/ \E i \in Server : AdvanceCommitIndex(i)
+\*           \/ \E i,j \in Server : i /= j /\ AppendEntries(i, j)
+\*           \/ \E m \in {msg \in ValidMessage(messages) : \* to visualize possible messages
+\*                    msg.mtype \in {AppendEntriesRequest, AppendEntriesResponse}} : Receive(m)
 \*           \/ \E m \in {msg \in ValidMessage(messages) : 
 \*                    msg.mtype \in {AppendEntriesRequest}} : DuplicateMessage(m)
 \*           \/ \E m \in {msg \in ValidMessage(messages) : 
@@ -98,9 +112,11 @@ LogInv ==
         \/ CheckIsPrefix(Committed(i),Committed(j)) 
         \/ CheckIsPrefix(Committed(j),Committed(i))
 
+
 \* Note that LogInv checks for safety violations across space
 \* This is a key safety invariant and should always be checked
-THEOREM Spec => ([]LogInv /\ []LeaderCompletenessInv /\ []LogMatchingInv /\ []MoreThanOneLeaderInv) 
-
+\* THEOREM Spec => ([]LogInv /\ []LeaderCompletenessInv /\ []LogMatchingInv /\ []MoreThanOneLeaderInv) 
+THEOREM MySpec => ([]LogInv /\ []LeaderCompletenessInv
+ /\ []LogMatchingInv /\ []MoreThanOneLeaderInv)
 =============================================================================
 \* Created by Ovidiu-Cristian Marcu

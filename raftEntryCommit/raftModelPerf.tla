@@ -5,13 +5,13 @@ EXTENDS raftSpec
 \*instrumentation and performance invariants
 
 \* A leader's maxc should remain under MaxClientRequests
-MaxCInv == (\E i \in Server : state[i] = Leader) => maxc <= MaxClientRequests
+MaxCInv == (\E i \in RaftServers(switchIndex) : state[i] = Leader) => maxc <= MaxClientRequests
 
 \* No server can become leader more than MaxBecomeLeader times
-LeaderCountInv == \E i \in Server : (state[i] = Leader => leaderCount[i] <= MaxBecomeLeader)
+LeaderCountInv == \E i \in RaftServers(switchIndex) : (state[i] = Leader => leaderCount[i] <= MaxBecomeLeader)
 
 \* No server can have a term exceeding MaxTerm
-MaxTermInv == \A i \in Server : currentTerm[i] <= MaxTerm
+MaxTermInv == \A i \in RaftServers(switchIndex) : currentTerm[i] <= MaxTerm
 
 \* Check lower bound for message counts on committed entries ----
 \* For any entry that has been marked as committed, verify that either the number
@@ -40,7 +40,9 @@ EntryCommitAckQuorumInv ==
 
 \* fake inv to obtain a trace
 LeaderCommitted ==
-    \E i \in Server : commitIndex[i] /= 2 \*
+    \E i \in raftServers(switchIndex) : commitIndex[i] /= 1 
+
+
 
 \*Modify LeaderCommited == \E i \in Server : commitIndex[i] /= 1
 \*and run with MySpec OR

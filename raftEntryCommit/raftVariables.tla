@@ -14,6 +14,9 @@ VARIABLE leaderCount
 \* maximum client requests so far
 VARIABLE maxc
 
+	
+VARIABLE switchIndex
+
 \* variable for tracking entry commit message counts
 \* Maps <<logIndex, logTerm>> to a record tracking message counts.
 \* [ sentCount |-> Nat,   \* AppendEntriesRequests sent for this entry
@@ -64,8 +67,20 @@ VARIABLE nextIndex
 VARIABLE matchIndex
 leaderVars == <<nextIndex, matchIndex>>
 
+\* storage for requests received by the switch before they're ordered
+VARIABLE switchBuffer
+\* Each server's buffer of unordered requests received from the switch
+\* Maps from Server to a set of request values pending ordering
+VARIABLE unorderedRequests
+\* Records which <<value, term>> pairs the current switch has sent to each server.
+\* Maps Server ID -> Set of <<Value, Term>> pairs.
+VARIABLE switchSentRecord
+RaftServers(currentSwitchId) == Server \ {currentSwitchId}
+\* New HovercRaft variables
+hovercraftVars == <<switchBuffer, unorderedRequests, switchIndex, switchSentRecord>>
+
 \* All variables; used for stuttering (asserting state hasn't changed).
-vars == <<messages, serverVars, candidateVars, leaderVars, logVars, instrumentationVars>>
+vars == <<messages, serverVars, candidateVars, leaderVars, logVars, instrumentationVars, hovercraftVars>>
 
 =============================================================================
 \* Created by Ovidiu-Cristian Marcu

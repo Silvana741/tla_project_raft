@@ -68,9 +68,13 @@ Committed(i) ==
     THEN << >>
     ELSE SubSeq(log[i],1,commitIndex[i])
 
-MyConstraint == (\A i \in Server: currentTerm[i] <= MaxTerm /\ Len(log[i]) <= MaxClientRequests ) 
-                /\ (\A m \in DOMAIN messages: messages[m] <= 1)
+\*MyConstraint == (\A i \in Server: currentTerm[i] <= MaxTerm /\ Len(log[i]) <= MaxClientRequests ) 
+\*               /\ (\A m \in DOMAIN messages: messages[m] <= 1)
 
+MyConstraint == (\A i \in RaftServers(switchIndex): currentTerm[i] <= MaxTerm /\ Len(log[i]) <= MaxClientRequests )
+                /\ (\A m \in DOMAIN messages: messages[m] <= 1)
+                /\ (\A m \in DOMAIN messages: messages[m] <= 1)
+                
 Symmetry == Permutations(Server)
 
 \* new bag of messages with one more m in it. the following from orig spec necessary for Drop
